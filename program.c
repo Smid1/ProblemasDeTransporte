@@ -12,61 +12,66 @@ typedef struct {
     int demanda[MAX_SIZE];
 } ProblemaTransporte;
 
-// Struct para representar a solu√ß√£o
+// Struct para representar a soluÁ„o
 typedef struct {
     int alocacao[MAX_SIZE][MAX_SIZE];
     int custoTotal;
 } SolucaoTransporte;
 
-// Assinaturas das fun√ß√µes do programa
-int obtemMatriz();
-void exibeProblema();
+// Assinaturas das funÁıes do programa
+int obtemMatriz(ProblemaTransporte *problema);
+void exibeProblema(ProblemaTransporte *problema);
+void inicializaSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao);
+void calculaCustoTotal(ProblemaTransporte *problema, SolucaoTransporte *solucao);
+void exibeSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao, char *nome_metodo);
+void cantoNoroeste(ProblemaTransporte *problema, SolucaoTransporte *solucaoCantoNoroeste);
 
-//int cantoNoroeste();
 //int custoMinimo();
 //int vam();
 
-// Fun√ß√£o principal
+// FunÁ„o principal
 int main(int argc, char* argv[]) {
-    setlocale(LC_ALL, "Portuguese");
+    setlocale(LC_ALL, "Portuguese_Brazil");
 
-    // Vari√°veis das structs
+    // Vari·veis das structs
     ProblemaTransporte problema;
     SolucaoTransporte solCanNor, solCustMin, solVam;
 
     printf("=== Problemas de Transporte ===\n\n");
     
-    // Chama a fun√ß√£o de coleta de dados, caso retorne 1, algum erro aconteceu e sai do programa.
+    // Chama a funÁ„o de coleta de dados, caso retorne 1, algum erro aconteceu e sai do programa.
     if (obtemMatriz(&problema)) {
         return 1;
     }
 
-    // Exibi√ß√£o do problema ap√≥s a leitura (para confirma√ß√£o do usu√°rio)
+    // ExibiÁ„o do problema apÛs a leitura (para confirmaÁ„o do usu·rio)
     exibeProblema(&problema);
 
-    // Solu√ß√£o pelo m√©todo do canto noroeste
+    // SoluÁ„o pelo mÈtodo do canto noroeste
+    cantoNoroeste(&problema, &solCanNor);
+    exibeSolucao(&problema, &solCanNor, "Canto Noroeste");
 
-    // Solu√ß√£o pelo m√©todo do custo m√≠nimo
+    // SoluÁ„o pelo mÈtodo do custo m√≠nimo
 
-    // Solu√ß√£o pelo m√©todo Vam
+    // SoluÁ„o pelo mÈtodo Vam
 
     return 0;
 }
 
-// Fun√ß√£o para coletar os dados do problema
+// FunÁ„o para coletar os dados do problema
 int obtemMatriz(ProblemaTransporte *problema) {
     int N, M, sumOferta = 0, sumDemanda = 0;
 
     printf("- Coleta de dados do problema -\n");
 
     // Faz a leitura do tamanho da matriz (NxM)
-    printf("Digite a quantidade de origens (ex: f√°bricas) - MAX %d: ", MAX_SIZE);
+    printf("Digite a quantidade de origens (ex: f·bricas) - MAX %d: ", MAX_SIZE);
     if (scanf("%d", &N) != 1 || N <= 0 || N > MAX_SIZE) {
-        printf("ERRO: Valor inv√°lido para N.\n");
+        printf("ERRO: Valor inv·lido para N.\n");
         return 1;
     }
 
-    printf("Digite a quantidade de destino (ex: dep√≥sitos) - MAX%d: ", MAX_SIZE);
+    printf("Digite a quantidade de destino (ex: depÛsitos) - MAX %d: ", MAX_SIZE);
     if (scanf("%d", &M) != 1 || M <= 0 || M > MAX_SIZE) {
         printf("ERRO: Valor inv√°lido para M.\n");
         return 1;
@@ -116,20 +121,20 @@ int obtemMatriz(ProblemaTransporte *problema) {
         sumDemanda += problema->demanda[j];
     }
 
-    // Verifica o equil√≠brio do problema
+    // Verifica o equilÌ≠brio do problema
     if (sumOferta != sumDemanda) {
-        printf("ERRO: O problema n√£o est√° equilibrado (Oferta e demanda s√£o diferentes).");
+        printf("ERRO: O problema n„o est· equilibrado (Oferta e demanda s„o diferentes).");
     }
 
     printf("\n\n");
     return 0;
 }
 
-// Fun√ß√£o para exibir os dados do problema
+// FunÁ„o para exibir os dados do problema
 void exibeProblema(ProblemaTransporte *problema) {
     int sum = 0;
 
-    printf("-- Exibi√ß√£o do problema --\n\n");
+    printf("-- ExibiÁ„o do problema --\n\n");
 
     printf("---------------------------------------------\n"); 
     printf("|  XXXXX  ");
@@ -162,4 +167,112 @@ void exibeProblema(ProblemaTransporte *problema) {
     printf("---------------------------------------------\n"); 
 
     printf("\n\n");
+}
+
+// FunÁ„o para inicializar a matriz da soluÁ„o com 0 (evitar dados inconsistentes)
+void inicializaSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao) {
+    for (int i = 0; i < problema->qtdOrigens; i++) {
+        for (int j = 0; j < problema->qtdDestinos; j++) {
+            solucao->alocacao[i][j] = 0;
+        }
+    }
+
+    solucao->custoTotal = 0;
+}
+
+// Funcao para calcular o custo total de uma solucao
+void calculaCustoTotal(ProblemaTransporte *problema, SolucaoTransporte *solucao) {
+    for (int i = 0; i < problema->qtdDestinos; i++) {
+        for (int j = 0; j < problema->qtdOrigens; j++) {
+            solucao->custoTotal += solucao->alocacao[i][j] * problema->custo[i][j];
+        }
+    }
+}
+
+// Funcao para exibir o resultado da soluÁ„o
+void exibeSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao, char *nomeMetodo) {
+    int sum = 0;
+
+    printf("-- SoluÁ„o pelo mÈtodo %s --\n", nomeMetodo);
+
+    printf("---------------------------------------------\n"); 
+    printf("|  XXXXX  ");
+
+    for (int i = 0; i < problema->qtdDestinos; i++) {
+        printf("|  D%d  ", i + 1);
+    }
+
+    printf("| Suprimento |\n");
+    printf("---------------------------------------------\n"); 
+
+    for (int i = 0; i < problema->qtdOrigens; i++) {
+        printf("|    O%d   |", i + 1);
+
+        for (int j = 0; j < problema->qtdDestinos; j++) {
+            printf("  %d  |", solucao->alocacao[i][j]);
+        }
+
+        printf("     %d     |\n", problema->oferta[i]);
+        printf("---------------------------------------------\n"); 
+    }
+
+    printf("| Demanda ");
+    
+    for (int i = 0; i < problema->qtdDestinos; i++) {
+        printf("|  %d  ", problema->demanda[i]);
+        sum += problema->demanda[i];
+    }
+
+    printf("|     %d     |\n", sum);
+    printf("---------------------------------------------\n"); 
+
+    printf("\nCusto total final: %d", solucao->custoTotal);
+
+    printf("\n\n");
+}
+
+// FunÁ„o para calcular a soluÁ„o pelo mÈtodo do canto noroeste
+void cantoNoroeste(ProblemaTransporte *problema, SolucaoTransporte *solucaoCantoNoroeste) {
+    // Vari·veis com a quantidade de origens e destinos
+    int N = problema->qtdOrigens, M = problema->qtdDestinos;
+
+    // Arrays com a oferta e demanda de cada origem e destino
+    int ofertaDisponivel[N], demandaDisponivel[M];
+
+    // Vari·veis para acompanhar a celula atual, comeÁando em [0][0] (canto noroeste)
+    int i = 0, j = 0;
+
+    // Inicializa a matriz da soluÁ„o 
+    inicializaSolucao(problema, solucaoCantoNoroeste);
+
+    // Calcula a oferta e demanda inicial
+    for (int i = 0; i < N; i++)
+        ofertaDisponivel[i] = problema->oferta[i];
+    for (int i = 0; i < M; i++)
+        demandaDisponivel[i] = problema->demanda[i];
+
+    // Percorre enquanto i e j n„o chegaram na coordenada da celula final
+    while (i < N && j < M) {
+        // Atribui a maior alocaÁ„o possÌ≠vel considerando a demanda e a oferta (o menor dos dois)
+        int alocacao = (ofertaDisponivel[i] < demandaDisponivel[j]) ? ofertaDisponivel[i] : demandaDisponivel[j];
+
+        // Faz a alocaÁ„o
+        solucaoCantoNoroeste->alocacao[i][j] = alocacao;
+
+        // Atualiza a demanda e a oferta
+        ofertaDisponivel[i] -= alocacao;
+        demandaDisponivel[j] -= alocacao;
+
+        // Move para a proxima celula levando em consideracao a linha e/ou coluna que foi finalizada
+        if (ofertaDisponivel[i] == 0) {
+            i++;
+        }
+
+        if (demandaDisponivel[j] == 0) {
+            j++;
+        }
+    }
+
+    // Calcula o custo total da solucao
+    calculaCustoTotal(problema, solucaoCantoNoroeste);
 }
