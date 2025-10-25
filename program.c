@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <locale.h>
+#include <limits.h>
 
 #define MAX_SIZE 10
 
@@ -25,9 +26,8 @@ void inicializaSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao)
 void calculaCustoTotal(ProblemaTransporte *problema, SolucaoTransporte *solucao);
 void exibeSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao, char *nome_metodo);
 void cantoNoroeste(ProblemaTransporte *problema, SolucaoTransporte *solucaoCantoNoroeste);
-
-//int custoMinimo();
-//int vam();
+void custoMinimo(ProblemaTransporte *problema, SolucaoTransporte *solucaoCustoMinimo);
+void vam(ProblemaTransporte *problema, SolucaoTransporte *solucaoVam);
 
 // Função principal
 int main(int argc, char* argv[]) {
@@ -51,9 +51,13 @@ int main(int argc, char* argv[]) {
     cantoNoroeste(&problema, &solCanNor);
     exibeSolucao(&problema, &solCanNor, "Canto Noroeste");
 
-    // Solução pelo método do custo mÃ­nimo
+    // Solução pelo método do custo mí­nimo
+    custoMinimo(&problema, &solCustMin);
+    exibeSolucao(&problema, &solCustMin, "Custo Mínimo");
 
     // Solução pelo método Vam
+    // vam(&problema, &solVam);
+    // exibeSolucao(&problema, &solVam, "VAM");
 
     return 0;
 }
@@ -275,4 +279,61 @@ void cantoNoroeste(ProblemaTransporte *problema, SolucaoTransporte *solucaoCanto
 
     // Calcula o custo total da solucao
     calculaCustoTotal(problema, solucaoCantoNoroeste);
+}
+
+// Função para calcular a solução pelo método do Custo Mínimo
+void custoMinimo(ProblemaTransporte *problema, SolucaoTransporte *solucaoCustoMinimo) {
+    // Variáveis com a quantidade de origens e destinos
+    int N = problema->qtdOrigens, M = problema->qtdDestinos;
+
+    // Arrays com a oferta e demanda de cada origem e destino
+    int ofertaDisponivel[N], demandaDisponivel[M];    
+
+    // Inicializa a matriz da solução 
+    inicializaSolucao(problema, solucaoCustoMinimo);
+
+    // Calcula a oferta e demanda inicial
+    for (int i = 0; i < N; i++)
+        ofertaDisponivel[i] = problema->oferta[i];
+    for (int i = 0; i < M; i++)
+        demandaDisponivel[i] = problema->demanda[i];
+
+    // Loop até que todas as ofertas e demandas sejam zeradas
+    while (1) {
+        int custoMin = INT_MAX, minI = -1, minJ, alocacao, flagOfertas;
+
+        // Percorre todas as celulas disponiveis até encontrar a de menor custo
+        for (int i = 0; i < N; i++) {
+            // Ainda existe oferta na linha?
+            if (ofertaDisponivel[i] > 0) { 
+                flagOfertas = 1;
+                for (int j = 0; j < M; j++) {
+                    // Ainda existe demanda na coluna? E A celula atual é a de menor custo?
+                    if (demandaDisponivel[j] > 0 && problema->custo[i][j] < custoMin) {
+                        // Salva o menor custo e as coordenadas da celula
+                        custoMin = problema->custo[i][j];
+                        minI = i;
+                        minJ = j;
+                    }
+                }
+            }
+        }
+
+        // Saída do loop: se não houver mais ofertas ou não for encontrado um valor mínimo
+        if (!flagOfertas || minI == -1)
+            break;
+
+        // Salva a quantidade a ser alocada dependendo da oferta e demanda restante
+        alocacao = (ofertaDisponivel[minI] < demandaDisponivel[minJ]) ? ofertaDisponivel[minI] : demandaDisponivel[minJ];
+        
+        // Passa para a solucao o valor
+        solucaoCustoMinimo->alocacao[minI][minJ] = alocacao;
+
+        // Atualiza a oferta e demanda
+        ofertaDisponivel[minI] -= alocacao;
+        demandaDisponivel[minJ] -= alocacao;
+    }
+
+    // Calcula o custo total da solucao
+    calculaCustoTotal(problema, solucaoCustoMinimo);
 }
