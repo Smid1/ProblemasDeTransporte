@@ -1,6 +1,7 @@
 #include <stdio.h>
+#include <locale.h>
 
-#define MAX_SIZE 10;
+#define MAX_SIZE 10
 
 // Struct para representar o problema
 typedef struct {
@@ -18,7 +19,8 @@ typedef struct {
 } SolucaoTransporte;
 
 // Assinaturas das funções do programa
-int obtemMariz();
+int obtemMatriz();
+void exibeProblema();
 
 //int cantoNoroeste();
 //int custoMinimo();
@@ -26,16 +28,27 @@ int obtemMariz();
 
 // Função principal
 int main(int argc, char* argv[]) {
+    setlocale(LC_ALL, "Portuguese");
+
     // Variáveis das structs
     ProblemaTransporte problema;
-    SolucaoTrasporte solCanNor, solCustMin, solVam;
+    SolucaoTransporte solCanNor, solCustMin, solVam;
 
-    printf("=== Problemas de Transporte ===\n");
+    printf("=== Problemas de Transporte ===\n\n");
     
     // Chama a função de coleta de dados, caso retorne 1, algum erro aconteceu e sai do programa.
-    if (obtemMartriz(&problema)) {
+    if (obtemMatriz(&problema)) {
         return 1;
     }
+
+    // Exibição do problema após a leitura (para confirmação do usuário)
+    exibeProblema(&problema);
+
+    // Solução pelo método do canto noroeste
+
+    // Solução pelo método do custo mínimo
+
+    // Solução pelo método Vam
 
     return 0;
 }
@@ -64,21 +77,24 @@ int obtemMatriz(ProblemaTransporte *problema) {
     problema->qtdOrigens = M;
 
     // Coleta a matriz de custos
-    printf("Entre com os valores da matriz de custos\n");
+    printf("\nEntre com os valores da matriz de custos\n");
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
-            printf("Custo C%d%d", i + 1, j + 1);
+            printf("Custo C%d%d: ", i + 1, j + 1);
             if (scanf("%d", &problema->custo[i][j]) != 1 || problema->custo[i][j] < 0) {
                 printf("ERRO: Custo inválido!\n");
                 return 1;
             } 
         }
+        printf("\n");
     }
 
     // Coleta os valores das ofertas das origens
+    printf("Entre com os valores das ofertas das origens\n");
+
     for (int i = 0; i < N; i++) {
-        printf("Oferta de N%d: ", i);
+        printf("Oferta de O%d: ", i + 1);
         if (scanf("%d", &problema->oferta[i]) != 1 || problema->oferta[i] < 1) {
             printf("ERRO: Oferta inválida!\n");
             return 1;
@@ -88,8 +104,10 @@ int obtemMatriz(ProblemaTransporte *problema) {
     }
 
     // Coleta os valores das demandas dos destinos
+    printf("\nEntre com os valores das demandas dos destinos\n");
+
     for (int j = 0; j < M; j++) {
-        printf("Oferta de M%d: ", j);
+        printf("Oferta de D%d: ", j + 1);
         if (scanf("%d", &problema->demanda[j]) != 1 || problema->demanda[j] < 1) {
             printf("ERRO: Demanda inválida!\n");
             return 1;
@@ -103,5 +121,45 @@ int obtemMatriz(ProblemaTransporte *problema) {
         printf("ERRO: O problema não está equilibrado (Oferta e demanda são diferentes).");
     }
 
+    printf("\n\n");
     return 0;
+}
+
+// Função para exibir os dados do problema
+void exibeProblema(ProblemaTransporte *problema) {
+    int sum = 0;
+
+    printf("-- Exibição do problema --\n\n");
+
+    printf("---------------------------------------------\n"); 
+    printf("|  XXXXX  ");
+    for (int i = 0; i < problema->qtdDestinos; i++) {
+        printf("|  D%d  ", i + 1);
+    }
+
+    printf("| Suprimento |\n");
+    printf("---------------------------------------------\n"); 
+
+    for (int i = 0; i < problema->qtdOrigens; i++) {
+        printf("|    O%d   |", i + 1);
+
+        for (int j = 0; j < problema->qtdDestinos; j++) {
+            printf("  %d  |", problema->custo[i][j]);
+        }
+
+        printf("     %d     |\n", problema->oferta[i]);
+        printf("---------------------------------------------\n"); 
+    }
+
+    printf("| Demanda ");
+
+    for (int i = 0; i < problema->qtdDestinos; i++) {
+        printf("|  %d  ", problema->demanda[i]);
+        sum += problema->demanda[i];
+    }
+
+    printf("|     %d     |\n", sum);
+    printf("---------------------------------------------\n"); 
+
+    printf("\n\n");
 }
