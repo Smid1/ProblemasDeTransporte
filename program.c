@@ -78,7 +78,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
 
     printf("Digite a quantidade de destino (ex: depósitos) - MAX %d: ", MAX_SIZE);
     if (scanf("%d", &M) != 1 || M <= 0 || M > MAX_SIZE) {
-        printf("ERRO: Valor invÃ¡lido para M.\n");
+        printf("ERRO: Valor inválido para M.\n");
         return 1;
     }
 
@@ -93,7 +93,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
         for (int j = 0; j < M; j++) {
             printf("Custo C%d%d: ", i + 1, j + 1);
             if (scanf("%d", &problema->custo[i][j]) != 1 || problema->custo[i][j] < 0) {
-                printf("ERRO: Custo invÃ¡lido!\n");
+                printf("ERRO: Custo inválido!\n");
                 return 1;
             } 
         }
@@ -106,7 +106,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
     for (int i = 0; i < N; i++) {
         printf("Oferta de O%d: ", i + 1);
         if (scanf("%d", &problema->oferta[i]) != 1 || problema->oferta[i] < 1) {
-            printf("ERRO: Oferta invÃ¡lida!\n");
+            printf("ERRO: Oferta inválida!\n");
             return 1;
         }
 
@@ -119,7 +119,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
     for (int j = 0; j < M; j++) {
         printf("Demanda de D%d: ", j + 1);
         if (scanf("%d", &problema->demanda[j]) != 1 || problema->demanda[j] < 1) {
-            printf("ERRO: Demanda invÃ¡lida!\n");
+            printf("ERRO: Demanda inválida!\n");
             return 1;
         }
 
