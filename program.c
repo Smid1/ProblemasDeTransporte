@@ -27,6 +27,7 @@ void calculaCustoTotal(ProblemaTransporte *problema, SolucaoTransporte *solucao)
 void exibeSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao, char *nome_metodo);
 void cantoNoroeste(ProblemaTransporte *problema, SolucaoTransporte *solucaoCantoNoroeste);
 void custoMinimo(ProblemaTransporte *problema, SolucaoTransporte *solucaoCustoMinimo);
+int calculaPenalidade(ProblemaTransporte *problema, int flagColLinham, int coord, int *recursoDisponivel, int tipo);
 void vam(ProblemaTransporte *problema, SolucaoTransporte *solucaoVam);
 
 // Função principal
@@ -56,8 +57,8 @@ int main(int argc, char* argv[]) {
     exibeSolucao(&problema, &solCustMin, "Custo Mínimo");
 
     // Solução pelo método Vam
-    // vam(&problema, &solVam);
-    // exibeSolucao(&problema, &solVam, "VAM");
+    vam(&problema, &solVam);
+    exibeSolucao(&problema, &solVam, "VAM");
 
     return 0;
 }
@@ -82,9 +83,9 @@ int obtemMatriz(ProblemaTransporte *problema) {
     }
 
     // Passa os valores para o problema
-    problema->qtdDestinos = N;
-    problema->qtdOrigens = M;
-
+    problema->qtdOrigens = N;
+    problema->qtdDestinos = M;
+    
     // Coleta a matriz de custos
     printf("\nEntre com os valores da matriz de custos\n");
 
@@ -116,7 +117,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
     printf("\nEntre com os valores das demandas dos destinos\n");
 
     for (int j = 0; j < M; j++) {
-        printf("Oferta de D%d: ", j + 1);
+        printf("Demanda de D%d: ", j + 1);
         if (scanf("%d", &problema->demanda[j]) != 1 || problema->demanda[j] < 1) {
             printf("ERRO: Demanda invÃ¡lida!\n");
             return 1;
@@ -128,6 +129,7 @@ int obtemMatriz(ProblemaTransporte *problema) {
     // Verifica o equilí­brio do problema
     if (sumOferta != sumDemanda) {
         printf("ERRO: O problema não está equilibrado (Oferta e demanda são diferentes).");
+        return 1;
     }
 
     printf("\n\n");
@@ -186,8 +188,8 @@ void inicializaSolucao(ProblemaTransporte *problema, SolucaoTransporte *solucao)
 
 // Funcao para calcular o custo total de uma solucao
 void calculaCustoTotal(ProblemaTransporte *problema, SolucaoTransporte *solucao) {
-    for (int i = 0; i < problema->qtdDestinos; i++) {
-        for (int j = 0; j < problema->qtdOrigens; j++) {
+    for (int i = 0; i < problema->qtdOrigens; i++) {
+        for (int j = 0; j < problema->qtdDestinos; j++) {
             solucao->custoTotal += solucao->alocacao[i][j] * problema->custo[i][j];
         }
     }
@@ -300,7 +302,7 @@ void custoMinimo(ProblemaTransporte *problema, SolucaoTransporte *solucaoCustoMi
 
     // Loop até que todas as ofertas e demandas sejam zeradas
     while (1) {
-        int custoMin = INT_MAX, minI = -1, minJ, alocacao, flagOfertas;
+        int custoMin = INT_MAX, minI = -1, minJ, alocacao, flagOfertas = 0;
 
         // Percorre todas as celulas disponiveis até encontrar a de menor custo
         for (int i = 0; i < N; i++) {
@@ -336,4 +338,154 @@ void custoMinimo(ProblemaTransporte *problema, SolucaoTransporte *solucaoCustoMi
 
     // Calcula o custo total da solucao
     calculaCustoTotal(problema, solucaoCustoMinimo);
+}
+
+// Função para calcular as penalidades para o método de VAM
+int calculaPenalidade(ProblemaTransporte *problema, int qtd, int coord, int *recursoDisponivel, int tipo) {
+    int menor1 = INT_MAX, menor2 = INT_MAX, custo;
+
+    // Percorre os recursos
+    for (int i = 0; i < qtd; i++) {
+        // Valida se existe recurso 
+        if (recursoDisponivel[i] > 0) {
+            // Passa a penalidade dependendo do tipo (linha ou coluna)
+            custo = (tipo == 0) ? problema->custo[coord][i] : problema->custo[i][coord];
+            
+            // Busca o menor custo
+            if (custo < menor1) {
+                menor2 = menor1;
+                menor1 = custo;
+            } else if (custo < menor2) {
+                menor2 = custo;
+            }
+        }
+    }
+
+    // Valor inalterado se só existir um custo disponível ou nenhum disponível
+    if (menor2 == INT_MAX) 
+        return 0;
+
+    // Retorna a penalidade 
+    return menor2 - menor1;
+}
+
+// Função para calcular a solução pelo método de VAM
+void vam(ProblemaTransporte *problema, SolucaoTransporte *solucaoVam) {
+    // Variáveis com a quantidade de origens e destinos
+    int N = problema->qtdOrigens, M = problema->qtdDestinos;
+
+    // Arrays com a oferta e demanda de cada origem e destino
+    int ofertaDisponivel[N], demandaDisponivel[M];   
+    
+    // Inicializa a matriz da solução 
+    inicializaSolucao(problema, solucaoVam);
+
+    // Calcula a oferta e demanda inicial
+    for (int i = 0; i < N; i++)
+        ofertaDisponivel[i] = problema->oferta[i];
+    for (int i = 0; i < M; i++)
+        demandaDisponivel[i] = problema->demanda[i];
+
+    // Loop até que todas as ofertas e demandas sejam zeradas
+    while (1) {
+        // Variaveis para as penalidades de linhas e colunas
+        int penalidadeI[problema->qtdOrigens], penalidadeJ[problema->qtdDestinos];
+
+        // Variaveis da maior penalidade
+        int maiorPenalidade = -1, coordMaiorPen = -1, tipoMaiorPen = -1; // 0 = linha, 1 = coluna
+        
+        // Flag para continuar
+        int flagOfertas = 0;
+
+        // Variaveis da posicao de alocacao
+        int alocacaoI = -1, alocacaoJ = -1;
+
+        // Variavel do custo minimo para alocar
+        int custoMinAlocacao = INT_MAX;
+
+        // Variavel do valor para alocar
+        int alocacao;
+
+        // Calcula as penalidades das linhas
+        for (int i = 0; i < N; i++) {
+            if (ofertaDisponivel[i] > 0) {
+                flagOfertas = 1;
+                penalidadeI[i] = calculaPenalidade(problema, M, i, demandaDisponivel, 0);
+            }
+        }
+
+        // Se não houver mais ofertas, finaliza o loop
+        if (!flagOfertas)
+            break;
+
+        // Calcula as penalidades das colunas
+        for (int j = 0; j < M; j++) {
+            if (demandaDisponivel[j] > 0) {
+                penalidadeJ[j] = calculaPenalidade(problema, N, j, ofertaDisponivel, 1);
+            }
+        }
+
+        // Busca a maior penalidade
+        for (int i = 0; i < N; i++) {
+            if (ofertaDisponivel[i] > 0 && penalidadeI[i] > maiorPenalidade ) {
+                maiorPenalidade = penalidadeI[i];
+                coordMaiorPen = i;
+                tipoMaiorPen = 0; 
+            }
+        }
+
+        for (int j = 0; j < M; j++) {
+            if (demandaDisponivel[j] > 0 && penalidadeJ[j] > maiorPenalidade) {
+                maiorPenalidade = penalidadeJ[j];
+                coordMaiorPen = j;
+                tipoMaiorPen = 1; 
+            }
+        }
+
+        // Se não foi encontrada penalidade, sai do loop
+        if (maiorPenalidade == -1) 
+            break;
+
+        // Se a maior penalidade for de linha
+        if (tipoMaiorPen == 0) {
+            // coordenada da maior penalidade
+            alocacaoI = coordMaiorPen;
+
+            // Procura o menor curso da linha
+            for (int j = 0; j < M; j++) {
+                if (demandaDisponivel[j] > 0) {
+                    if (problema->custo[alocacaoI][j] < custoMinAlocacao) {
+                        custoMinAlocacao = problema->custo[alocacaoI][j];
+                        alocacaoJ = j;
+                    }
+                }
+            }
+        } else { // Se for de coluna
+            // Coordenada da maior penalidade
+            alocacaoJ = coordMaiorPen;
+
+            // Procura o menor custo da coluna
+            for (int i = 0; i < N; i++) {
+                if (ofertaDisponivel[i] > 0) {
+                    if (problema->custo[i][alocacaoJ] < custoMinAlocacao) {
+                        custoMinAlocacao = problema->custo[i][alocacaoJ];
+                        alocacaoI = i;
+                    }
+                }
+            }
+        }
+
+        // Busca o valor a ser alocado
+        alocacao = (ofertaDisponivel[alocacaoI] < demandaDisponivel[alocacaoJ]) ? ofertaDisponivel[alocacaoI] : demandaDisponivel[alocacaoJ];
+
+        // Aloca o valor na solucao
+        solucaoVam->alocacao[alocacaoI][alocacaoJ] = alocacao;
+
+        // Atualiza a oferta e demanda
+        ofertaDisponivel[alocacaoI] -= alocacao;
+        demandaDisponivel[alocacaoJ] -= alocacao;
+    }
+
+    // Calcula o custo total da solucao
+    calculaCustoTotal(problema, solucaoVam);
 }
